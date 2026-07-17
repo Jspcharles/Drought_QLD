@@ -1,6 +1,6 @@
 %%writefile .gitignore
-# Ignore data files
-data/
+# Ignore Data files
+Data/
 *.csv
 *.xlsx
 *.h5
