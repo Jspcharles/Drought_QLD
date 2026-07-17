@@ -1,0 +1,22 @@
+%%writefile .gitignore
+# Ignore data files
+data/
+*.csv
+*.xlsx
+*.h5
+*.pt
+*.pth
+*.npz
+*.nc
+
+# Ignore virtual environment
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
