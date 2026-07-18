@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Queensland Drought Data Platform</title>
+<meta name="description" content="Gridded SPI, SPEI, and Protracted Drought Classification data for Queensland, Australia, 2000-2025. Interactive map and open data download.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ground: #171410;
+    --surface: #1f1b15;
+    --surface-raised: #262019;
+    --line: #373126;
+    --text: #ede7da;
+    --text-muted: #9c9484;
+    --dry: #b4402f;
+    --dry-bright: #d1543f;
+    --wet: #3568a6;
+    --wet-bright: #4a7fc2;
+    --wheat: #c9a227;
+    --max-width: 1080px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    line-height: 1.15;
+    margin: 0 0 0.5em 0;
+    letter-spacing: -0.01em;
+  }
+
+  .mono {
+    font-family: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+
+  a { color: var(--wheat); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--wheat);
+    outline-offset: 3px;
+  }
+
+  .wrap {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ---------- NAV ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(23, 20, 16, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .wordmark {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .wordmark span { color: var(--wheat); }
+  .navlinks { display: flex; gap: 28px; }
+  .navlinks a {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  .navlinks a:hover { color: var(--text); text-decoration: none; }
+  @media (max-width: 640px) {
+    .navlinks { display: none; }
+  }
+
+  /* ---------- PULSE STRIP (signature element) ---------- */
+  .pulse-strip {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    width: 100%;
+    overflow: hidden;
+  }
+  .pulse-strip.hero { height: 92px; }
+  .pulse-strip.divider { height: 14px; opacity: 0.55; }
+  .pulse-bar {
+    flex: 1 1 auto;
+    min-width: 2px;
+    border-radius: 1px 1px 0 0;
+  }
+
+  /* ---------- HERO ---------- */
+  header.hero {
+    padding: 88px 0 0 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--wheat);
+    margin-bottom: 18px;
+  }
+  h1.title {
+    font-size: clamp(2.2rem, 5vw, 3.4rem);
+    max-width: 15ch;
+  }
+  .hero-sub {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    max-width: 56ch;
+    margin: 18px 0 36px 0;
+  }
+  .hero-sub .mono { color: var(--text); }
+
+  .cta-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 56px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 22px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--wet-bright), var(--wet));
+    color: #fff;
+  }
+  .btn-primary:hover { background: linear-gradient(135deg, #5a8fd4, var(--wet-bright)); }
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--line);
+    color: var(--text);
+  }
+  .btn-secondary:hover { border-color: var(--wheat); color: var(--wheat); }
+
+  /* ---------- SECTIONS ---------- */
+  section { padding: 72px 0; }
+  section + section { border-top: 1px solid var(--line); }
+  .section-head { max-width: 62ch; margin-bottom: 44px; }
+  .section-head h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); }
+  .section-head p { color: var(--text-muted); font-size: 1.02rem; margin: 0; }
+
+  /* ---------- INDEX CARDS ---------- */
+  .index-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 800px) { .index-grid { grid-template-columns: 1fr; } }
+  .index-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 26px;
+  }
+  .index-card .code {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    padding: 4px 9px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .code.dry { background: rgba(180, 64, 47, 0.18); color: var(--dry-bright); }
+  .code.wet { background: rgba(53, 104, 166, 0.2); color: var(--wet-bright); }
+  .code.wheat { background: rgba(201, 162, 39, 0.18); color: var(--wheat); }
+  .index-card h3 { font-size: 1.15rem; margin-bottom: 8px; }
+  .index-card p { color: var(--text-muted); font-size: 0.93rem; margin: 0; }
+  .scale-list {
+    margin-top: 14px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .scale-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 3px 9px;
+  }
+
+  /* ---------- EXPLORE ---------- */
+  .explore-panel {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  @media (max-width: 800px) { .explore-panel { grid-template-columns: 1fr; } }
+  .feature-list { list-style: none; padding: 0; margin: 24px 0 32px 0; }
+  .feature-list li {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+  .feature-list li:first-child { border-top: none; }
+  .feature-list li::before {
+    content: "→";
+    color: var(--wheat);
+    flex-shrink: 0;
+  }
+  .feature-list li strong { color: var(--text); font-weight: 600; }
+
+  .map-mock {
+    aspect-ratio: 4 / 5;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .map-mock svg { width: 72%; height: auto; }
+  .map-mock .badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--line);
+    color: var(--text-muted);
+    padding: 5px 10px;
+    border-radius: 100px;
+  }
+  .badge .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--wet-bright);
+    margin-right: 6px;
+  }
+
+  /* ---------- DATA / DOWNLOAD ---------- */
+  .data-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 32px;
+  }
+  .data-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+  .license-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--wheat);
+    border: 1px solid rgba(201, 162, 39, 0.35);
+    background: rgba(201, 162, 39, 0.08);
+    padding: 5px 11px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .filelist { border-top: 1px solid var(--line); margin-top: 18px; }
+  .filerow {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.9rem;
+  }
+  .filerow .fname { font-family: 'IBM Plex Mono', monospace; color: var(--text); }
+  .filerow .fsize { color: var(--text-muted); }
+  .doi-box {
+    margin-top: 22px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .doi-box .mono { font-size: 0.88rem; color: var(--wet-bright); }
+
+  /* ---------- METHOD ---------- */
+  .method-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+  @media (max-width: 800px) { .method-grid { grid-template-columns: 1fr; } }
+  .recovery-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .recovery-table th, .recovery-table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .recovery-table th {
+    color: var(--text-muted);
+    font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .recovery-table td.mono { color: var(--text); }
+  .paper-citation {
+    background: var(--surface);
+    border-left: 3px solid var(--wet);
+    border-radius: 0 8px 8px 0;
+    padding: 20px 24px;
+    font-size: 0.93rem;
+    color: var(--text-muted);
+    margin-top: 20px;
+  }
+  .paper-citation strong { color: var(--text); }
+
+  /* ---------- CITE ---------- */
+  .cite-block {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .cite-block .cite-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--wheat);
+    margin-bottom: 10px;
+    display: block;
+  }
+  .cite-block p { margin: 0; font-size: 0.92rem; color: var(--text); padding-right: 90px; }
+  .copy-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: var(--surface-raised);
+    border: 1px solid var(--line);
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    padding: 6px 11px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .copy-btn:hover { border-color: var(--wheat); color: var(--wheat); }
+  .copy-btn.copied { color: var(--wet-bright); border-color: var(--wet-bright); }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    padding: 48px 0 60px 0;
+  }
+  .footer-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .footer-grid a { color: var(--text-muted); }
+  .footer-grid a:hover { color: var(--wheat); }
+  footer .credit { margin-top: 24px; font-size: 0.8rem; color: #5c5546; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="wordmark">QLD<span>·</span>Drought</div>
+    <div class="navlinks">
+      <a href="#indices">Data</a>
+      <a href="#explore">Explore</a>
+      <a href="#download">Download</a>
+      <a href="#method">Method</a>
+      <a href="#cite">Cite</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Open gridded climate data · 2000&ndash;2025</div>
+    <h1 class="title">Queensland Drought Data Platform</h1>
+    <p class="hero-sub">
+      Monthly <span class="mono">SPI</span> and <span class="mono">SPEI</span> at four accumulation
+      scales, plus a bioregion-aware <span class="mono">Protracted Drought Classification</span>,
+      gridded at 0.05&deg; across Queensland, Australia. Built for researchers, agribusiness, and
+      anyone working on drought risk &mdash; free to explore, free to download.
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#explore">Explore the interactive map</a>
+      <a class="btn btn-secondary" href="#download">Download the data ↓</a>
+    </div>
+  </div>
+  <div class="pulse-strip hero" id="heroStrip"></div>
+</header>
+
+<section id="indices">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>What's in the data</h2>
+      <p>Three complementary products, all derived from SILO gridded climate observations and consistent across the same 382 &times; 311 grid.</p>
+    </div>
+    <div class="index-grid">
+      <div class="index-card">
+        <span class="code dry">SPI</span>
+        <h3>Standardized Precipitation Index</h3>
+        <p>Rainfall-based drought signal, standardized against the long-term local climatology.</p>
+        <div class="scale-list">
+          <span class="scale-pill">SPI-1</span><span class="scale-pill">SPI-3</span>
+          <span class="scale-pill">SPI-6</span><span class="scale-pill">SPI-12</span>
+        </div>
+      </div>
+      <div class="index-card">
+        <span class="code wet">SPEI</span>
+        <h3>Standardized Precipitation-Evapotranspiration Index</h3>
+        <p>Adds atmospheric water demand to the rainfall signal, via gamma-distribution fitting.</p>
+        <div class="scale-list">
+          <span class="scale-pill">SPEI-1</span><span class="scale-pill">SPEI-3</span>
+          <span class="scale-pill">SPEI-6</span><span class="scale-pill">SPEI-12</span>
+        </div>
+      </div>
+      <div class="index-card">
+        <span class="code wheat">PDC</span>
+        <h3>Protracted Drought Classification</h3>
+        <p>Flags repeat drought events occurring before full recovery, using bioregion-specific recovery-lag thresholds.</p>
+        <div class="scale-list">
+          <span class="scale-pill">13 bioregions</span><span class="scale-pill">QLD-wide</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="pulse-strip divider" id="dividerStrip1"></div></div>
+
+<section id="explore">
+  <div class="wrap">
+    <div class="explore-panel">
+      <div>
+        <div class="section-head" style="margin-bottom: 0;">
+          <h2>Browse it on the map</h2>
+          <p>An interactive explorer built on Google Earth Engine &mdash; no login, no software to install.</p>
+        </div>
+        <ul class="feature-list">
+          <li><strong>Switch indices and scales</strong> &mdash; SPI, SPEI, or Protracted Drought, at any of the four accumulation windows.</li>
+          <li><strong>Step through any month</strong> &mdash; January 2000 through December 2025.</li>
+          <li><strong>Download what you see</strong> &mdash; a direct GeoTIFF link for the exact layer on screen, generated on the spot.</li>
+        </ul>
+        <a class="btn btn-primary" href="https://chafinans.users.earthengine.app/view/qld-drought-explorer" target="_blank" rel="noopener">Open the interactive map ↗</a>
+      </div>
+      <div class="map-mock">
+        <span class="badge"><span class="dot"></span>live map</span>
+        <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="qldgrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#b4402f" stop-opacity="0.85"/>
+              <stop offset="55%" stop-color="#c9a227" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#3568a6" stop-opacity="0.85"/>
+            </linearGradient>
+          </defs>
+          <path d="M40 10 L150 5 L165 40 L190 70 L175 110 L185 150 L160 190 L120 235 L70 220 L55 180 L20 160 L15 100 L35 60 Z"
+                fill="url(#qldgrad)" stroke="#ede7da" stroke-width="1.2" stroke-opacity="0.3"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="pulse-strip divider" id="dividerStrip2"></div></div>
+
+<section id="download">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Download the full dataset</h2>
+      <p>Archived permanently on Zenodo with a citable DOI &mdash; the canonical source for bulk use, reproducible research, and anything the map doesn't cover.</p>
+    </div>
+    <div class="data-card">
+      <div class="data-card-top">
+        <div>
+          <h3 style="margin-bottom: 4px;">Queensland Drought Indices Dataset</h3>
+          <p style="color: var(--text-muted); margin: 0; font-size: 0.92rem;">SPI, SPEI, Protracted Drought Classification &middot; 2000&ndash;2025</p>
+        </div>
+        <span class="license-tag">CC BY 4.0</span>
+      </div>
+      <div class="filelist">
+        <div class="filerow"><span class="fname">QLD_SPI_2000_2025.nc</span><span class="fsize">239.8 MB</span></div>
+        <div class="filerow"><span class="fname">QLD_SPEI_2000_2025.nc</span><span class="fsize">593.1 MB</span></div>
+        <div class="filerow"><span class="fname">QLD_protracted_drought_label_2000_2025.nc</span><span class="fsize">354.7 MB</span></div>
+        <div class="filerow" style="border-bottom: none;"><span class="fname">README.md</span><span class="fsize">8.5 KB</span></div>
+      </div>
+      <div class="doi-box">
+        <a class="btn btn-primary" href="https://doi.org/10.5281/zenodo.21418371" target="_blank" rel="noopener">View on Zenodo ↗</a>
+        <span class="mono">doi.org/10.5281/zenodo.21418371</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="pulse-strip divider" id="dividerStrip3"></div></div>
+
+<section id="method">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>How protracted drought is defined</h2>
+      <p>A repeat drought event is only "protracted" if it strikes before a location has had time to recover &mdash; and how long that takes depends on the bioregion.</p>
+    </div>
+    <div class="method-grid">
+      <div>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Drought onset is flagged where <span class="mono" style="color:var(--text)">SPI-1 &le; -1.0</span>.
+          Recovery is confirmed once <span class="mono" style="color:var(--text)">SPI-1 &ge; -0.5</span>.
+          If a new drought begins again before that bioregion's typical recovery window has elapsed,
+          it's classified as <strong style="color: var(--text)">protracted</strong> &mdash; capturing
+          cumulative stress that single-event drought indices miss entirely.
+        </p>
+        <div class="paper-citation">
+          <strong>Joseph, C., Wang, Q.J., Mushtaq, S., Li, Y., Barratt, J., &amp; Barratt, T.</strong> (2026).
+          Deep learning the droughts: Spatiotemporal monitoring of protracted dry conditions in Queensland, Australia.
+          <em>Science of the Total Environment</em>, 1021, 181564.
+          <a href="https://doi.org/10.1016/j.scitotenv.2026.181564" target="_blank" rel="noopener">doi.org/10.1016/j.scitotenv.2026.181564</a>
+        </div>
+      </div>
+      <div>
+        <table class="recovery-table">
+          <thead>
+            <tr><th>Bioregion</th><th>Code</th><th>Recovery (months)</th></tr>
+          </thead>
+          <tbody id="recoveryTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="pulse-strip divider" id="dividerStrip4"></div></div>
+
+<section id="cite">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Citation</h2>
+      <p>Using this data in your own work? Please cite both the dataset and the methodology paper.</p>
+    </div>
+
+    <div class="cite-block">
+      <span class="cite-label">Dataset</span>
+      <p id="citeDataset">Joseph, C. (2026). Queensland Drought Indices Dataset (SPI, SPEI, Protracted Drought Classification), 2000&ndash;2025 [Data set]. Zenodo. https://doi.org/10.5281/zenodo.21418371</p>
+      <button class="copy-btn" data-target="citeDataset">Copy</button>
+    </div>
+
+    <div class="cite-block">
+      <span class="cite-label">Methodology paper</span>
+      <p id="citePaper">Joseph, C., Wang, Q.J., Mushtaq, S., Li, Y., Barratt, J., &amp; Barratt, T. (2026). Deep learning the droughts: Spatiotemporal monitoring of protracted dry conditions in Queensland, Australia. Science of the Total Environment, 1021, 181564. https://doi.org/10.1016/j.scitotenv.2026.181564</p>
+      <button class="copy-btn" data-target="citePaper">Copy</button>
+    </div>
+
+    <div class="cite-block">
+      <span class="cite-label">Underlying climate data</span>
+      <p id="citeSilo">Derived from SILO gridded climate data, &copy; State of Queensland (Department of Environment and Science) 2000&ndash;2026, used under CC BY 4.0. longpaddock.qld.gov.au/silo</p>
+      <button class="copy-btn" data-target="citeSilo">Copy</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="pulse-strip divider" style="margin-bottom: 32px;" id="dividerStrip5"></div>
+    <div class="footer-grid">
+      <div>
+        Charles Joseph &middot; PhD Candidate, University of Southern Queensland<br>
+        <a href="https://doi.org/10.5281/zenodo.21418371" target="_blank" rel="noopener">Zenodo</a> &middot;
+        <a href="https://doi.org/10.1016/j.scitotenv.2026.181564" target="_blank" rel="noopener">Paper</a> &middot;
+        <a href="https://chafinans.users.earthengine.app/view/qld-drought-explorer" target="_blank" rel="noopener">Interactive map</a>
+      </div>
+      <div>
+        Climate data: SILO, Queensland Department of Environment and Science.<br>
+        This dataset: CC BY 4.0.
+      </div>
+    </div>
+    <div class="credit">Built as part of a PhD thesis on explainable AI approaches for reducing basis risk in weather index insurance for agribusiness.</div>
+  </div>
+</footer>
+
+<script>
+  // ---- Pulse strip generator: bars colored along the SPI dry(red)-normal-wet(blue) scale ----
+  function seededRandom(seed) {
+    return function () {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return (seed / 0x7fffffff);
+    };
+  }
+
+  function spiColor(v) {
+    // v in [-1, 1]: -1 = dry (clay red), 0 = neutral, 1 = wet (steel blue)
+    var dry = [180, 64, 47];
+    var mid = [58, 50, 38];
+    var wet = [53, 104, 166];
+    var c;
+    if (v < 0) {
+      var t = v + 1; // 0..1
+      c = dry.map(function (d, i) { return Math.round(d + (mid[i] - d) * t); });
+    } else {
+      var t2 = v;
+      c = mid.map(function (m, i) { return Math.round(m + (wet[i] - m) * t2); });
+    }
+    return 'rgb(' + c.join(',') + ')';
+  }
+
+  function buildStrip(elId, count, seed, heightVariance) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    var rand = seededRandom(seed);
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < count; i++) {
+      var bar = document.createElement('div');
+      bar.className = 'pulse-bar';
+      var v = (rand() * 2 - 1) * 0.85 + Math.sin(i / count * Math.PI * 3) * 0.3;
+      v = Math.max(-1, Math.min(1, v));
+      bar.style.background = spiColor(v);
+      if (heightVariance) {
+        var h = 25 + rand() * 75;
+        bar.style.height = h + '%';
+      } else {
+        bar.style.height = '100%';
+      }
+      frag.appendChild(bar);
+    }
+    el.appendChild(frag);
+  }
+
+  buildStrip('heroStrip', 130, 2000, true);
+  ['dividerStrip1','dividerStrip2','dividerStrip3','dividerStrip4','dividerStrip5'].forEach(function (id, i) {
+    buildStrip(id, 90, 4000 + i * 17, false);
+  });
+
+  // ---- Recovery lag table ----
+  var recoveryData = [
+    ['Brigalow Belt', 'BRB', 3], ['Cape York Peninsula', 'CYP', 3],
+    ['Central Queensland Coast', 'CQC', 3], ['Channel Country', 'CHC', 5],
+    ['Desert Uplands', 'DEU', 4], ['Einasleigh Uplands', 'EIU', 3],
+    ['Gulf Plains', 'GUP', 2], ['Mitchell Grass Downs', 'MGD', 4],
+    ['Mulga Lands', 'MUL', 4], ['New England Tableland', 'NET', 3],
+    ['Northwest Highlands', 'NWH', 4], ['Southeast Queensland', 'SEQ', 3],
+    ['Wet Tropics', 'WET', 3]
+  ];
+  var tbody = document.getElementById('recoveryTableBody');
+  recoveryData.forEach(function (row) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + row[0] + '</td><td class="mono">' + row[1] + '</td><td class="mono">' + row[2] + '</td>';
+    tbody.appendChild(tr);
+  });
+
+  // ---- Copy-to-clipboard for citations ----
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var target = document.getElementById(btn.dataset.target);
+      var text = target.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        var original = btn.textContent;
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 1800);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
