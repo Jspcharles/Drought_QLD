@@ -65,7 +65,7 @@ The processed `.nc` data files themselves are **not** stored in this repository 
 If you use this data or code, please cite both the dataset and the methodology paper:
 
 **Dataset:**
-> Joseph, C. (2026). Queensland Drought Indices Dataset (SPI, SPEI, Protracted Drought Classification), 2000&ndash;2025 [Data set]. Zenodo. https://doi.org/10.5281/zenodo.21418371
+> Joseph, C., Wang, Q.J., Mushtaq, S., Li, Y., Barratt, J., & Barratt, T. (2026). Queensland Drought Indices Dataset (SPI, SPEI, Protracted Drought Classification), 2000&ndash;2025 [Data set]. Zenodo. https://doi.org/10.5281/zenodo.21418371
 
 **Methodology paper:**
 > Joseph, C., Wang, Q.J., Mushtaq, S., Li, Y., Barratt, J., & Barratt, T. (2026). Deep learning the droughts: Spatiotemporal monitoring of protracted dry conditions in Queensland, Australia. *Science of the Total Environment*, 1021, 181564. https://doi.org/10.1016/j.scitotenv.2026.181564
