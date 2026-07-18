@@ -228,11 +228,9 @@
   /* ---------- EXPLORE ---------- */
   .explore-panel {
     display: grid;
-    grid-template-columns: 1.1fr 1fr;
-    gap: 40px;
-    align-items: center;
+    grid-template-columns: 1fr;
+    gap: 32px;
   }
-  @media (max-width: 800px) { .explore-panel { grid-template-columns: 1fr; } }
   .feature-list { list-style: none; padding: 0; margin: 24px 0 32px 0; }
   .feature-list li {
     display: flex;
@@ -251,7 +249,7 @@
   .feature-list li strong { color: var(--text); font-weight: 600; }
 
   .map-mock {
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 16 / 10;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 12px;
