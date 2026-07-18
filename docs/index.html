@@ -257,23 +257,27 @@
     border-radius: 12px;
     position: relative;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
-  .map-mock svg { width: 72%; height: auto; }
+  .map-mock iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
   .map-mock .badge {
     position: absolute;
     top: 16px;
     left: 16px;
+    z-index: 2;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.7rem;
     letter-spacing: 0.05em;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.55);
     border: 1px solid var(--line);
     color: var(--text-muted);
     padding: 5px 10px;
     border-radius: 100px;
+    pointer-events: none;
   }
   .badge .dot {
     display: inline-block;
@@ -506,17 +510,12 @@
       </div>
       <div class="map-mock">
         <span class="badge"><span class="dot"></span>live map</span>
-        <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="qldgrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#b4402f" stop-opacity="0.85"/>
-              <stop offset="55%" stop-color="#c9a227" stop-opacity="0.6"/>
-              <stop offset="100%" stop-color="#3568a6" stop-opacity="0.85"/>
-            </linearGradient>
-          </defs>
-          <path d="M40 10 L150 5 L165 40 L190 70 L175 110 L185 150 L160 190 L120 235 L70 220 L55 180 L20 160 L15 100 L35 60 Z"
-                fill="url(#qldgrad)" stroke="#ede7da" stroke-width="1.2" stroke-opacity="0.3"/>
-        </svg>
+        <iframe
+          src="https://chafinans.users.earthengine.app/view/qld-drought-explorer"
+          title="Queensland Drought Explorer -- live interactive map"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
       </div>
     </div>
   </div>
